@@ -1,9 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 using VerticalSliceArchitectureSample.WebApi.Commands.Users.User;
+using VerticalSliceArchitectureSample.WebApi.Domain.Users.User.Dtos;
 using VerticalSliceArchitectureSample.WebApi.Queries.Users.User;
-using static VerticalSliceArchitectureSample.WebApi.Domain.Users.User.UserDomain;
 
 namespace VerticalSliceArchitectureSample.WebApi.Controllers
 {
@@ -15,13 +16,13 @@ namespace VerticalSliceArchitectureSample.WebApi.Controllers
             _mediator = mediator;
         }
         [HttpPost]
-        public Task<UserRegister.Response> Register(RegisterInputModel registerInputModel)
+        public Task<UserRegister.Response> Register(UserRegisterInputModel registerInputModel)
         {
             UserRegister.Command request = new UserRegister.Command(registerInputModel);
             return _mediator.Send(request);
         }
         [HttpGet]
-        public Task<UserGetById.Response> GetById(int id)
+        public Task<UserGetById.Response> GetById(Guid id)
         {
             UserGetById.Query request = new UserGetById.Query(id);
             return _mediator.Send(request);

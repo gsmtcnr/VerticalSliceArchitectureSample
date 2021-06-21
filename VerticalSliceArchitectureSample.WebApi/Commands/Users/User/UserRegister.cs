@@ -1,78 +1,70 @@
 ﻿using Corex.Model.Infrastructure;
-using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
-using Sample.CQRS.Inftrastructure.Mapper;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using VerticalSliceArchitectureSample.WebApi.Contexts;
-using VerticalSliceArchitectureSample.WebApi.Dependency;
+using VerticalSliceArchitectureSample.WebApi.Domain.Users.User;
+using VerticalSliceArchitectureSample.WebApi.Domain.Users.User.Dtos;
 using VerticalSliceArchitectureSample.WebApi.ExceptionHandler;
 using VerticalSliceArchitectureSample.WebApi.Results;
 using VerticalSliceArchitectureSample.WebApi.Validation;
-using static VerticalSliceArchitectureSample.WebApi.Domain.Users.User.UserDomain;
 
 namespace VerticalSliceArchitectureSample.WebApi.Commands.Users.User
 {
     public static class UserRegister
     {
-        public record Command(RegisterInputModel InputModel) : IRequest<Response>;
+        public record Command(UserRegisterInputModel InputModel) : IRequest<Response>;
         public record Response : CQRSResponse
         {
-            public int Id { get; set; }
+            public Guid Id { get; set; }
         }
-        public class ValidatorHandler : IValidationHandler<Command>
+
+        public class Validator : IValidationHandler<Command>
         {
+            private readonly SampleQueryContext _dbContext;
+            public Validator(SampleQueryContext dbContext) => _dbContext = dbContext;
             public Task<CQRSResponse> Validate(Command request)
             {
-                CQRSResponse resultModel = new CQRSResponse();
-                Validator validationRules = new Validator();
-                FluentValidation.Results.ValidationResult validateResult = validationRules.Validate(request);
-                if (!validateResult.IsValid)
+                if (_dbContext.Set<UserEntity>().Any(v => v.Email == request.InputModel.Email))
                 {
-                    resultModel.IsSuccess = false;
-                    resultModel.Messages.AddRange(validateResult.Errors.Select(v =>
-                    new MessageItem
+                    return Task.FromResult(CQRSResponse.Error(new MessageItem
                     {
-                        Code = v.ErrorCode,
-                        Message = v.ErrorMessage
-                    }).ToList());
+                        Code = "Duplicate_Email",
+                        Message = "There is a registered mail."
+                    }));
+
                 }
-                return Task.FromResult<CQRSResponse>(resultModel);
-            }
-        }
-        public class Validator : AbstractValidator<Command>
-        {
-            public Validator()
-            {
-                RuleFor(m => m.InputModel.Email).MinimumLength(6).MaximumLength(32).NotNull().EmailAddress();
-                RuleFor(m => m.InputModel.Password).MinimumLength(8).MaximumLength(64).NotNull();
+                return Task.FromResult(CQRSResponse.Ok());
             }
         }
         public class Handler : IRequestHandler<Command, Response>
         {
-            private readonly IDependencyManager _dependencyManager;
             private readonly SampleCommandContext _dbContext;
-            public Handler(IDependencyManager ioc, SampleCommandContext sampleCommandContext)
+            public Handler(SampleCommandContext sampleCommandContext)
             {
-                _dependencyManager = ioc;
                 _dbContext = sampleCommandContext;
             }
             public async Task<Response> Handle(Command request, CancellationToken cancellationToken)
             {
                 Response resultObjectModel = new Response();
-                ISampleMapper mapper = _dependencyManager.Resolve<ISampleMapper>();
-                UserEntity userEntity = CreateUserEntity(request, mapper);
                 using (IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken))
                 {
                     try
                     {
-                        EntityEntry<UserEntity> insertItem = _dbContext.Set<UserEntity>().Add(userEntity);
-                        await _dbContext.SaveChangesAsync(cancellationToken);
-                        await transaction.CommitAsync(cancellationToken);
-                        resultObjectModel.Id = insertItem.Entity.Id;
+                        IResultObjectModel<UserEntity> createUserResult = UserEntity.Create(request.InputModel.Email, request.InputModel.Password);
+                        if (!createUserResult.IsSuccess)
+                            resultObjectModel.Messages.AddRange(createUserResult.Messages);
+                        else
+                        {
+                            EntityEntry<UserEntity> insertItem = _dbContext.Set<UserEntity>().Add(createUserResult.Data);
+                            await _dbContext.SaveChangesAsync(cancellationToken);
+                            await transaction.CommitAsync(cancellationToken);
+                            resultObjectModel.Id = insertItem.Entity.Id;
+                        }
                     }
                     catch (System.Exception ex)
                     {
@@ -85,16 +77,7 @@ namespace VerticalSliceArchitectureSample.WebApi.Commands.Users.User
 
                 return await Task.FromResult(resultObjectModel);
             }
-            private static UserEntity CreateUserEntity(Command request, ISampleMapper mapper)
-            {
-                UserDto dto = new UserDto
-                {
-                    Email = request.InputModel.Email,
-                    Password = request.InputModel.Password
-                };
-                UserEntity userEntity = mapper.Map<UserDto, UserEntity>(dto);
-                return userEntity;
-            }
+
         }
     }
 }

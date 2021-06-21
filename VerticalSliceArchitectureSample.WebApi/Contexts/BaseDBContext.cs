@@ -1,8 +1,11 @@
 ﻿using Corex.Data.Derived.EntityFramework;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
+using System.Data;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using VerticalSliceArchitectureSample.WebApi.Dependency;
 using VerticalSliceArchitectureSample.WebApi.Domain;
 
@@ -46,6 +49,55 @@ namespace VerticalSliceArchitectureSample.WebApi.Contexts
             else if (baseTypeName == entityIntType)
                 mapMethod = typeInfo.GetMethod(nameof(BaseIntKeyEntityConfiguration<BaseIntKeyEntity>.Map));
             return mapMethod;
+        }
+        private IDbContextTransaction _currentTransaction;
+        public void BeginTransaction()
+        {
+            if (_currentTransaction != null)
+            {
+                return;
+            }
+
+            _currentTransaction = Database.BeginTransaction(IsolationLevel.ReadCommitted);
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            try
+            {
+                await SaveChangesAsync();
+
+                _currentTransaction?.Commit();
+            }
+            catch
+            {
+                RollbackTransaction();
+                throw;
+            }
+            finally
+            {
+                if (_currentTransaction != null)
+                {
+                    _currentTransaction.Dispose();
+                    _currentTransaction = null;
+                }
+            }
+        }
+
+        public void RollbackTransaction()
+        {
+            try
+            {
+                _currentTransaction?.Rollback();
+            }
+            finally
+            {
+                if (_currentTransaction != null)
+                {
+                    _currentTransaction.Dispose();
+                    _currentTransaction = null;
+                }
+            }
         }
     }
 }
