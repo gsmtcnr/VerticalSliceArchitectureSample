@@ -18,7 +18,7 @@ namespace VerticalSliceArchitectureSample.WebApi.Queries.Users.User
     {
         public record Query(Guid Id) : IRequest<Response>;
 
-        public record Response : CQRSResponse
+        public class Response : ResultModel
         {
             public Guid Id { get; set; }
             public string Email { get; set; }
@@ -26,11 +26,10 @@ namespace VerticalSliceArchitectureSample.WebApi.Queries.Users.User
 
         public class ValidatorHandler : IValidationHandler<Query>
         {
-            public Task<CQRSResponse> Validate(Query request)
+            public Task<ResultModel> Validate(Query request)
             {
-                CQRSResponse resultModel = new CQRSResponse();
                 //GetById için validation gerekirse buraya yazabiliriz.
-                return Task.FromResult(resultModel);
+                return Task.FromResult(ResultModel.Ok());
             }
         }
         public class Handler : IRequestHandler<Query, Response>
@@ -42,24 +41,24 @@ namespace VerticalSliceArchitectureSample.WebApi.Queries.Users.User
             }
             public async Task<Response> Handle(Query request, CancellationToken cancellationToken)
             {
-                Response responseModel = new Response();
-                using (IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken))
+                using IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                try
                 {
-                    try
+
+                    UserEntity userEntity = _dbContext.Set<UserEntity>().Where(s => s.Id == request.Id).FirstOrDefault();
+                    return await Task.FromResult(new Response
                     {
-                        UserEntity userEntity = _dbContext.Set<UserEntity>().Where(s => s.Id == request.Id).FirstOrDefault();
-                        responseModel.Email = userEntity.Email;
-                        responseModel.Id = userEntity.Id;
-                    }
-                    catch (System.Exception ex)
-                    {
-                        await transaction.RollbackAsync(cancellationToken);
-                        responseModel.IsSuccess = false;
-                        ExceptionManager exceptionManager = new ExceptionManager(ex);
-                        responseModel.Messages.AddRange(exceptionManager.GetMessages());
-                    }
+                        IsSuccess = true,
+                        Id = userEntity.Id,
+                        Email = userEntity.Email
+                    });
                 }
-                return await Task.FromResult(responseModel);
+                catch (System.Exception ex)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    ExceptionManager exceptionManager = new ExceptionManager(ex);
+                    return await Task.FromResult((Response)ResultModel.Error(exceptionManager.GetMessages()));
+                }
             }
         }
     }

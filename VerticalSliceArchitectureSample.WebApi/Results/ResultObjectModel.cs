@@ -7,6 +7,7 @@ namespace VerticalSliceArchitectureSample.WebApi.Results
     { 
         public ResultObjectModel(TData data) : base(data)
         {
+            IsSuccess = true;
         }
     }
 }

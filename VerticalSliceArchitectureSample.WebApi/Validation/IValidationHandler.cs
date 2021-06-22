@@ -8,6 +8,6 @@ namespace VerticalSliceArchitectureSample.WebApi.Validation
     }
     public interface IValidationHandler<T> : IValidationHandler
     {
-        Task<CQRSResponse> Validate(T request);
+        Task<ResultModel> Validate(T request);
     }
 }

@@ -7,7 +7,7 @@ using VerticalSliceArchitectureSample.WebApi.Validation;
 namespace VerticalSliceArchitectureSample.WebApi.Behaviours
 {
     public class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TResponse : CQRSResponse, new()
+    where TResponse : ResultModel, new()
     {
         private readonly IValidationHandler<TRequest> _validationHandler;
         public ValidationBehaviour(IValidationHandler<TRequest> validationHandler)
@@ -16,7 +16,7 @@ namespace VerticalSliceArchitectureSample.WebApi.Behaviours
         }
         public async Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken, RequestHandlerDelegate<TResponse> next)
         {
-            CQRSResponse result = await _validationHandler.Validate(request);
+            ResultModel result = await _validationHandler.Validate(request);
             if (!result.IsSuccess)
                 return new TResponse
                 {
