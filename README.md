@@ -1,4 +1,4 @@
-# VerticalSliceArchitectureSample
+# Vertical Slice Architecture Sample CQRS&MediatR
 
 Projede DB olarak "MS SQL" kullandım. Settings klasörü içerisinde "appsettings.Development"dan SQL'inizin connectionString bilginizi yazmayı unutmayın.
 
