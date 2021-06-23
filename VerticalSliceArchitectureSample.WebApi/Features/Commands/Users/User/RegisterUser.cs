@@ -16,9 +16,9 @@ using VerticalSliceArchitectureSample.WebApi.Validation;
 
 namespace VerticalSliceArchitectureSample.WebApi.Commands.Users.User
 {
-    public static class UserRegister
+    public static class RegisterUser
     {
-        public record Command(UserRegisterInputModel InputModel) : IRequest<Response>;
+        public record Command(RegisterUserInputModel InputModel) : IRequest<Response>;
         public class Response : ResultModel
         {
             public Guid Id { get; set; }

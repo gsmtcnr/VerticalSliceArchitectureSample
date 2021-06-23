@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using VerticalSliceArchitectureSample.WebApi.Contexts;
-using VerticalSliceArchitectureSample.WebApi.Dependency;
 using VerticalSliceArchitectureSample.WebApi.Domain.Users.User;
 using VerticalSliceArchitectureSample.WebApi.ExceptionHandler;
 using VerticalSliceArchitectureSample.WebApi.Results;
@@ -14,7 +13,7 @@ using VerticalSliceArchitectureSample.WebApi.Validation;
 
 namespace VerticalSliceArchitectureSample.WebApi.Queries.Users.User
 {
-    public static class UserGetById
+    public static class GetUserById
     {
         public record Query(Guid Id) : IRequest<Response>;
 

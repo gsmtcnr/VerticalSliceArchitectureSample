@@ -16,15 +16,15 @@ namespace VerticalSliceArchitectureSample.WebApi.Controllers
             _mediator = mediator;
         }
         [HttpPost]
-        public Task<UserRegister.Response> Register(UserRegisterInputModel registerInputModel)
+        public Task<RegisterUser.Response> Register(RegisterUserInputModel registerInputModel)
         {
-            UserRegister.Command request = new UserRegister.Command(registerInputModel);
+            RegisterUser.Command request = new RegisterUser.Command(registerInputModel);
             return _mediator.Send(request);
         }
         [HttpGet]
-        public Task<UserGetById.Response> GetById(Guid id)
+        public Task<GetUserById.Response> GetById(Guid id)
         {
-            UserGetById.Query request = new UserGetById.Query(id);
+            GetUserById.Query request = new GetUserById.Query(id);
             return _mediator.Send(request);
         }
     }

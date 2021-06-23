@@ -3,7 +3,7 @@ using VerticalSliceArchitectureSample.WebApi.Commands.Users.User;
 
 namespace VerticalSliceArchitectureSample.WebApi.Controllers.Users.RequestValidations
 {
-    public class UserRegisterRequestValidation : AbstractValidator<UserRegister.Command>
+    public class UserRegisterRequestValidation : AbstractValidator<RegisterUser.Command>
     {
         public UserRegisterRequestValidation()
         {
