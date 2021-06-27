@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using VerticalSliceArchitectureSample.WebApi.Commands.Users.User;
-using VerticalSliceArchitectureSample.WebApi.Domain.Users.User.Dtos;
 using VerticalSliceArchitectureSample.WebApi.Queries.Users.User;
 
 namespace VerticalSliceArchitectureSample.WebApi.Controllers
@@ -16,10 +15,9 @@ namespace VerticalSliceArchitectureSample.WebApi.Controllers
             _mediator = mediator;
         }
         [HttpPost]
-        public Task<RegisterUser.Response> Register(RegisterUserInputModel registerInputModel)
+        public Task<RegisterUser.Response> Register(RegisterUser.Command registerCommand)
         {
-            RegisterUser.Command request = new RegisterUser.Command(registerInputModel);
-            return _mediator.Send(request);
+            return _mediator.Send(registerCommand);
         }
         [HttpGet]
         public Task<GetUserById.Response> GetById(Guid id)

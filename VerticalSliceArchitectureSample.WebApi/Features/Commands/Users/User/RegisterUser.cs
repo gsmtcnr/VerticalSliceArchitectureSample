@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using VerticalSliceArchitectureSample.WebApi.Contexts;
 using VerticalSliceArchitectureSample.WebApi.Controllers.Users.RequestValidations;
 using VerticalSliceArchitectureSample.WebApi.Domain.Users.User;
-using VerticalSliceArchitectureSample.WebApi.Domain.Users.User.Dtos;
 using VerticalSliceArchitectureSample.WebApi.ExceptionHandler;
 using VerticalSliceArchitectureSample.WebApi.Results;
 using VerticalSliceArchitectureSample.WebApi.Validation;
@@ -18,7 +17,7 @@ namespace VerticalSliceArchitectureSample.WebApi.Commands.Users.User
 {
     public static class RegisterUser
     {
-        public record Command(RegisterUserInputModel InputModel) : IRequest<Response>;
+        public record Command(string Email, string Password) : IRequest<Response>;
         public class Response : ResultModel
         {
             public Guid Id { get; set; }
@@ -44,7 +43,7 @@ namespace VerticalSliceArchitectureSample.WebApi.Commands.Users.User
                 }
 
                 //Business Validation..
-                if (_dbContext.Set<UserEntity>().Any(v => v.Email == request.InputModel.Email))
+                if (_dbContext.Set<UserEntity>().Any(v => v.Email == request.Email))
                 {
                     return Task.FromResult(ResultModel.Error(new MessageItem
                     {
@@ -68,7 +67,7 @@ namespace VerticalSliceArchitectureSample.WebApi.Commands.Users.User
                 using IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
                 try
                 {
-                    IResultObjectModel<UserEntity> createUserResult = UserEntity.Create(request.InputModel.Email, request.InputModel.Password);
+                    IResultObjectModel<UserEntity> createUserResult = UserEntity.Create(request.Email, request.Password);
                     if (!createUserResult.IsSuccess)
                     {
                         return await Task.FromResult((Response)ResultModel.Error(createUserResult.Messages));
@@ -77,10 +76,10 @@ namespace VerticalSliceArchitectureSample.WebApi.Commands.Users.User
                     EntityEntry<UserEntity> insertItem = _dbContext.Set<UserEntity>().Add(createUserResult.Data);
                     await _dbContext.SaveChangesAsync(cancellationToken);
                     await transaction.CommitAsync(cancellationToken);
-                    return await Task.FromResult( new Response
+                    return await Task.FromResult(new Response
                     {
-                          IsSuccess=true,
-                          Id= insertItem.Entity.Id
+                        IsSuccess = true,
+                        Id = insertItem.Entity.Id
                     });
                 }
                 catch (System.Exception ex)
